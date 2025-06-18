@@ -301,7 +301,7 @@
         Cdelt <- expression(delta^13 * "C" ~ "(‰ vs. VPDB)")
         
         # Determine shared y-axis range
-        common_y_limits <- c(125, 105)
+        common_y_limits <- c(125, 100)
         
         # Redefine each plot with standardized formatting
         gg_CLC_d13C_Age <- ggplot(CLC_isotope_data[order(CLC_isotope_data$age), ]) +
@@ -431,47 +431,6 @@
           width = 11,        
           height = 8.5,       
           dpi = 300
-        ) 
+        )
         
-        
-     
-# junkyard ------------------------------------------    
-        
-     
-# OLD DEPTH PLOT   
-# Order by depth
-CCCclean <- CCCclean %>%
-  arrange(age_Ma)
-# Add 3-point rolling average column
-CCCclean <- CCCclean %>%
-  arrange(Strat_m_above_Pryor) %>%
-  mutate(d13C_3pt_avg = rollmean(d.13C.12C, 3, fill = NA, align = "center"))
-# Create the plot
-ggplot_CrookedCreek <- ggplot(CCCclean, aes(x = d.13C.12C, y = Strat_m_above_Pryor)) +
-  geom_point(size = 1.5, color = "blue", alpha = 0.2) +
-  geom_path(aes(x = d13C_3pt_avg, y = Strat_m_above_Pryor), colour = "black") +
-  labs(
-    x = expression(delta^13*C ~ "(‰ VPDB)"),
-    y = "Stratigraphy (m above base of LSM)",
-    title = "CCC C-isotope Chemostrat"
-  ) +
-  coord_cartesian(xlim = c(-29, -20), ylim = c(-6, 70)) +
-  theme_minimal() +
-  theme(
-    panel.background = element_blank(), 
-    plot.background = element_blank(),
-    panel.grid = element_blank(),
-    panel.border = element_blank(),
-    axis.ticks.x = element_line(color = "black"),
-    axis.ticks.length = unit(0.2, "cm")
-  )
-# Print plot to viewer
-print(ggplot_CrookedCreek)
-# Export as PNG
-ggsave(
-  filename = here("results", "figures", "CCC_C_isotope_chemostrat_labeled.png"),
-  plot = ggplot_CrookedCreek,
-  width = 2,
-  height = 5,
-  dpi = 300
-)
+  
