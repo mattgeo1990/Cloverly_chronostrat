@@ -20,12 +20,12 @@
       CCC_age_model <- read.csv(here::here("data", "raw", "Crooked_Creek_age_model.csv"))
       
         # Take a look at Jack's models
-        ggplot(CLC_age_model, aes(x = Height_m, y = Preferred_Age)) +
+        ggplot(CLC_age_model, aes(x = Preferred_Age, y = Height_m)) +
           geom_point(color = "cornflowerblue", size = 1.5) +
-          scale_y_reverse() +  # Reverses y-axis to show increasing age downward
+          scale_x_reverse() +  # Reverses y-axis to show increasing age downward
           labs(
-            x = "Depth (m)",
-            y = "Age (Ma)",
+            x = "Age (Ma)",
+            y = "Depth (m)",
             title = "Jack's CLC age model"
           ) +
           theme_minimal()
@@ -34,12 +34,12 @@
       CLC_age_model_MLA <- read.csv(here::here("data", "raw", "CLC_unconformity_mla_age_model.csv"))
       
         # Take a look at the model
-        ggplot(CLC_age_model_MLA, aes(x = Height_m, y = Preferred_Age)) +
+        ggplot(CLC_age_model_MLA, aes(x = Preferred_Age, y = Height_m)) +
           geom_point(color = "cornflowerblue", size = 1.5) +
-          scale_y_reverse() +  # Reverses y-axis to show increasing age downward
+          scale_x_reverse() +  # Reverses y-axis to show increasing age downward
           labs(
-            x = "Depth (m)",
-            y = "Age (Ma)",
+            x = "Age (Ma)",
+            y = "Depth (m)",
             title = "MLA's CLC age model"
           ) +
           theme_minimal()
@@ -63,8 +63,8 @@
       # Cody Landfill - some isotope data outside range of age model so we put NA for age
         
         # Define interpolation range based on the age model
-        min_height <- min(CLC_age_model_MLA$Height_m)
-        max_height <- max(CLC_age_model_MLA$Height_m)
+        min_height <- min(CLC_age_model$Height_m)
+        max_height <- max(CLC_age_model$Height_m)
         
         # Mask values outside range to avoid flat extrapolation
         valid_heights <- CLC_isotope_data$Height_m >= min_height & CLC_isotope_data$Height_m <= max_height
@@ -74,16 +74,16 @@
         
         # Interpolate only for values within the valid range
         CLC_isotope_data$age[valid_heights] <- approx(
-          x = CLC_age_model_MLA$Height_m,
-          y = CLC_age_model_MLA$Preferred_Age,
+          x = CLC_age_model$Height_m,
+          y = CLC_age_model$Preferred_Age,
           xout = CLC_isotope_data$Height_m[valid_heights],
           rule = 1  # No extrapolation
         )$y
           
         # Interpolate preferred age from CLC_age_model
             CLC_interp <- approx(
-              x = CLC_age_model_MLA$Height_m,
-              y = CLC_age_model_MLA$Preferred_Age,
+              x = CLC_age_model$Height_m,
+              y = CLC_age_model$Preferred_Age,
               xout = CLC_isotope_data$Depth,  # replace with actual column name
               rule = 2
             )
@@ -104,8 +104,8 @@
               theme_minimal()
             
             # Manual edits
-            CLC_isotope_data$age[CLC_isotope_data$age >= 110 & CLC_isotope_data$age <= 120] <- 109.1
-            CLC_isotope_data$age[CLC_isotope_data$age >= 121 & CLC_isotope_data$age <= 123] <- 109.1
+            # CLC_isotope_data$age[CLC_isotope_data$age >= 110 & CLC_isotope_data$age <= 120] <- 109.1
+            # CLC_isotope_data$age[CLC_isotope_data$age >= 121 & CLC_isotope_data$age <= 123] <- 109.1
             
             # Look at model again
             ggplot(CLC_isotope_data, aes(x = Depth, y = age)) +
