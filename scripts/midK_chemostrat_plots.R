@@ -1,28 +1,15 @@
 
 #### Setup ####
 
-# Load required packages
-library(ggplot2)
-library(zoo)
-library(readr)
-library(dplyr)
-library(here)
+# Check if data is loaded; if not, run setup
+if (!exists("CLC_d13C_clean") || !exists("CCC_d13C_clean") || 
+    !exists("combined_isotope_data")) {
+  source(here::here("scripts", "setup.R"))
+}
 
 # Create delta notation for x-axis
 Cdelt <- expression("δ"^13 * "Corg (‰ vs. VPDB)")
 
-#### Read composite data ####
-
-# Read in the composite data using a project-relative path
-data <- read_csv(here("data", "raw", "HerrleEtAl2015_CompositeCIdata.csv"))
-
-# Prepare data: sort, convert factor, and compute 3-point average
-data <- data %>%
-  arrange(Age_Ma_Gradstein) %>%
-  mutate(
-    Source_C_data = as.factor(Source_C_data),
-    d13C_3pt_avg = rollmean(d13Corg_VPBD, 3, fill = NA, align = "center")
-  )
 
 #### Plot: Full Composite (Herrle et al., 2015) ####
 

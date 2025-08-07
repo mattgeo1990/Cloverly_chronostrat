@@ -1,141 +1,16 @@
 # Setup ------------------------
 
-  # Load packages
-    library(ggplot2)
-    library(readr)
-    library(dplyr)
-    library(zoo)
-    library(here)
+# Check if data is loaded; if not, run setup
+if (!exists("CLC_d13C_clean") || !exists("CCC_isotope_data") || 
+    !exists("CLC_age_model") || !exists("CCC_age_model")) {
+  source(here::here("scripts", "setup.R"))
+}
 
-  # Read data
 
-    # Read in Cody Landfill data
-      CLC_isotope_data <- read.csv(here("data", "raw", "CLC_results1.csv"))
-
-    # Read in cleaned Crooked Creek data
-      CCC_isotope_data <- read.csv(here("data", "processed", "CCC_d13Corg_clean.csv"))
-
-    # Load Jack's age models
-      CLC_age_model <- read.csv(here::here("data", "raw", "Cody_Landfill_age_model.csv"))
-      CCC_age_model <- read.csv(here::here("data", "raw", "Crooked_Creek_age_model.csv"))
-      
-        # Take a look at Jack's models
-        ggplot(CLC_age_model, aes(x = Preferred_Age, y = Height_m)) +
-          geom_point(color = "cornflowerblue", size = 1.5) +
-          scale_x_reverse() +  # Reverses y-axis to show increasing age downward
-          labs(
-            x = "Age (Ma)",
-            y = "Depth (m)",
-            title = "Jack's CLC age model"
-          ) +
-          theme_minimal()
-        
-    # Load MLA revised CLC age model with unconformity
-      CLC_age_model_MLA <- read.csv(here::here("data", "raw", "CLC_unconformity_mla_age_model.csv"))
-      
-        # Take a look at the model
-        ggplot(CLC_age_model_MLA, aes(x = Preferred_Age, y = Height_m)) +
-          geom_point(color = "cornflowerblue", size = 1.5) +
-          scale_x_reverse() +  # Reverses y-axis to show increasing age downward
-          labs(
-            x = "Age (Ma)",
-            y = "Depth (m)",
-            title = "MLA's CLC age model"
-          ) +
-          theme_minimal()
-        
-    # Take a look at Jack's models
-      ggplot(CLC_age_model, aes(x = Height_m, y = Preferred_Age)) +
-        geom_point(color = "cornflowerblue", size = 1.5) +
-        scale_y_reverse() +  # Reverses y-axis to show increasing age downward
-        labs(
-          x = "Depth (m)",
-          y = "Age (Ma)",
-          title = "Jack's CLC age model"
-        ) +
-        theme_minimal()
-      
-    # !!! omit CLC outlier !!! # probably a bust sample, maybe CO3 included
-      CLC_isotope_data <- CLC_isotope_data[which(CLC_isotope_data$d.13C.12C < -15), ]
-  
-## integrate age models with isotope data ####
-      
-      # Cody Landfill - some isotope data outside range of age model so we put NA for age
-        
-        # Define interpolation range based on the age model
-        min_height <- min(CLC_age_model$Height_m)
-        max_height <- max(CLC_age_model$Height_m)
-        
-        # Mask values outside range to avoid flat extrapolation
-        valid_heights <- CLC_isotope_data$Height_m >= min_height & CLC_isotope_data$Height_m <= max_height
-        
-        # Create an age column and assign NA by default
-        CLC_isotope_data$age <- NA
-        
-        # Interpolate only for values within the valid range
-        CLC_isotope_data$age[valid_heights] <- approx(
-          x = CLC_age_model$Height_m,
-          y = CLC_age_model$Preferred_Age,
-          xout = CLC_isotope_data$Height_m[valid_heights],
-          rule = 1  # No extrapolation
-        )$y
-          
-        # Interpolate preferred age from CLC_age_model
-            CLC_interp <- approx(
-              x = CLC_age_model$Height_m,
-              y = CLC_age_model$Preferred_Age,
-              xout = CLC_isotope_data$Depth,  # replace with actual column name
-              rule = 2
-            )
-            
-          # Add interpolated age to CLC dataset
-          CLC_isotope_data$age <- CLC_interp$y
-          
-        # Modify CLC age model to account for unconformity
-          # Look at model first
-            ggplot(CLC_isotope_data, aes(x = Depth, y = age)) +
-              geom_point(color = "cornflowerblue", size = 1.5) +
-              scale_y_reverse() +  # Reverses y-axis to show increasing age downward
-              labs(
-                x = "Depth (m)",
-                y = "Age (Ma)",
-                title = "interpolated CLC age model"
-              ) +
-              theme_minimal()
-            
-            # Manual edits
-            # CLC_isotope_data$age[CLC_isotope_data$age >= 110 & CLC_isotope_data$age <= 120] <- 109.1
-            # CLC_isotope_data$age[CLC_isotope_data$age >= 121 & CLC_isotope_data$age <= 123] <- 109.1
-            
-            # Look at model again
-            ggplot(CLC_isotope_data, aes(x = Depth, y = age)) +
-              geom_point(color = "cornflowerblue", size = 1.5) +
-              scale_y_reverse() +  # Reverses y-axis to show increasing age downward
-              labs(
-                x = "Depth (m)",
-                y = "Age (Ma)",
-                title = "interpolated CLC age model"
-              ) +
-              theme_minimal()
-            
-            
-      # Crooked Creek
-        # Interpolate preferred age from CCC_age_model
-        CCC_interp <- approx(
-          x = CCC_age_model$Height_m,
-          y = CCC_age_model$Preferred_Age,
-          xout = CCCclean_isotope_data$Strat_m_above_Pryor,  # replace with actual column name
-          rule = 2
-        )
-        
-        # Add interpolated age to CCC dataset
-        CCCclean_isotope_data$age <- CCC_interp$y
-        
-        
 # Cody Landfill ------------
         ## By Depth ####
       # CLC d13C vs Depth
-        gg_CLC_d13C_Depth <- ggplot(CLC_isotope_data[ order(CLC_isotope_data$Depth), ], aes(x = d.13C.12C, y = Depth)) +
+        gg_CLC_d13C_Depth <- ggplot(CLC_d13C_clean[ order(CLC_d13C_clean$Depth), ], aes(x = d.13C.12C, y = Depth)) +
           geom_point(size = 1.5, color = "cornflowerblue") +
           geom_path(aes(x=rollmean(d.13C.12C, 3, na.pad=TRUE)), colour = "black") +   # Add a line 
           labs(
@@ -175,7 +50,7 @@
  ## By Age ####
         
         # CLC d13C vs Age
-        gg_CLC_d13C_Age <- ggplot(CLC_isotope_data[ order(CLC_isotope_data$age), ], aes(x = d.13C.12C, y = age)) +
+        gg_CLC_d13C_Age <- ggplot(CLC_d13C_clean[ order(CLC_d13C_clean$age), ], aes(x = d.13C.12C, y = age)) +
           geom_point(size = 1.5, color = "cornflowerblue") +
           geom_path(aes(x=rollmean(d.13C.12C, 3, na.pad=TRUE)), colour = "black") +   # Add a line 
           labs(
@@ -217,12 +92,12 @@
         
 # Crooked Creek ---------
   ## By Depth ####
-        # CLC d13C vs Depth
-        gg_CCC_d13C_Depth <- ggplot(CLC_isotope_data[ order(CLC_isotope_data$Strat_m_above_Pryor), ], aes(x = d.13C.12C, y = Strat_m_above_Pryor)) +
+        # CCC d13C vs Depth
+        gg_CCC_d13C_Depth <- ggplot(CCC_d13C_clean[ order(CCC_d13C_clean$Strat_m_above_Pryor), ], aes(x = avg_d13C_VPDB, y = Strat_m_above_Pryor)) +
           geom_point(size = 1.5, color = "cornflowerblue") +
-          geom_path(aes(x=rollmean(d.13C.12C, 3, na.pad=TRUE)), colour = "black") +   # Add a line 
+          geom_path(aes(x=rollmean(avg_d13C_VPDB, 3, na.pad=TRUE)), colour = "black") +   # Add a line 
           labs(
-            x = Cdelt,
+            x = "d13Cord",
             y = "Stratigraphy (m above base of LSM)",
             title = "CCC d13C by Depth"
           ) +
@@ -256,7 +131,7 @@
         )
 ## By Age ####
         # CCC d13C vs Age
-        gg_CCC_d13C_Age <- ggplot(CCCclean_isotope_data[ order(CCCclean_isotope_data$age), ], aes(x = avg_d13C_VPDB, y = age)) +
+        gg_CCC_d13C_Age <- ggplot(CCC_d13C_clean[ order(CCC_d13C_clean$age), ], aes(x = avg_d13C_VPDB, y = age)) +
           geom_point(size = 1.5, color = "cornflowerblue") +
           geom_path(aes(x=rollmean(avg_d13C_VPDB, 3, na.pad=TRUE)), colour = "black") +   # Add a line 
           labs(
@@ -304,7 +179,7 @@
         common_y_limits <- c(125, 100)
         
         # Redefine each plot with standardized formatting
-        gg_CLC_d13C_Age <- ggplot(CLC_isotope_data[order(CLC_isotope_data$age), ]) +
+        gg_CLC_d13C_Age <- ggplot(CLC_d13C_clean[order(CLC_d13C_clean$age), ]) +
           geom_point(aes(x = d.13C.12C, y = age), size = 1.5, color = "cornflowerblue") +
           geom_path(aes(x = rollmean(d.13C.12C, 3, na.pad = TRUE), y = age), color = "black") +
           scale_y_reverse(limits = common_y_limits) +
@@ -325,7 +200,7 @@
             axis.ticks.length = unit(0.2, "cm")
           )
         
-        gg_CCC_d13C_Age <- ggplot(CCCclean_isotope_data[order(CCCclean_isotope_data$age), ]) +
+        gg_CCC_d13C_Age <- ggplot(CCC_d13C_clean[order(CCC_d13C_clean$age), ]) +
           geom_point(aes(x = avg_d13C_VPDB, y = age), size = 1.5, color = "cornflowerblue") +
           geom_path(aes(x = rollmean(avg_d13C_VPDB, 3, na.pad = TRUE), y = age), color = "black") +
           scale_y_reverse(limits = common_y_limits) +
@@ -372,7 +247,7 @@
          common_y_limits <- c(0, 70)
         
         # Redefine each plot with standardized formatting
-        gg_CLC_d13C_Depth <- ggplot(CLC_isotope_data[order(CLC_isotope_data$Depth), ]) +
+        gg_CLC_d13C_Depth <- ggplot(CLC_d13C_clean[order(CLC_d13C_clean$Depth), ]) +
           geom_point(aes(x = d.13C.12C, y = Depth), size = 1.5, color = "cornflowerblue") +
           geom_path(aes(x = rollmean(d.13C.12C, 3, na.pad = TRUE), y = Depth), color = "black") +
           scale_y_continuous(limits = common_y_limits) +
@@ -393,8 +268,8 @@
             axis.ticks.length = unit(0.2, "cm")
           )
         
-        CCCclean_isotope_data
-        gg_CCC_d13C_Depth <- ggplot(CCCclean_isotope_data[order(CCCclean_isotope_data$Strat_m_above_Pryor), ]) +
+        CCC_d13C_clean
+        gg_CCC_d13C_Depth <- ggplot(CCC_d13C_clean[order(CCC_d13C_clean$Strat_m_above_Pryor), ]) +
           geom_point(aes(x = avg_d13C_VPDB, y = Strat_m_above_Pryor), size = 1.5, color = "cornflowerblue") +
           geom_path(aes(x = rollmean(avg_d13C_VPDB, 3, na.pad = TRUE), y = Strat_m_above_Pryor), color = "black") +
           scale_y_continuous(limits = common_y_limits) +
@@ -433,4 +308,73 @@
           dpi = 300
         )
         
-  
+# combined Albian -----------------------
+        
+
+        # Determine shared y-axis range
+        common_y_limits <- c(112, 104)
+        
+        # Redefine each plot with standardized formatting
+        gg_CLC_Age_Albian <- ggplot(CLC_d13C_clean[order(CLC_d13C_clean$age), ]) +
+          geom_point(aes(x = d.13C.12C, y = age), size = 1.5, color = "cornflowerblue") +
+          geom_path(aes(x = rollmean(d.13C.12C, 3, na.pad = TRUE), y = age), color = "black") +
+          scale_y_reverse(limits = common_y_limits) +
+          coord_cartesian(xlim = c(-32, -18)) +
+          labs(
+            x = Cdelt,
+            y = "Age (Ma)",
+            title = expression("Cody Landfill " * delta^13 * "C by Age")) + 
+          theme_minimal() +
+          theme(
+            panel.background = element_blank(),
+            plot.background = element_blank(),
+            panel.grid = element_blank(),
+            axis.line.y = element_blank(),
+            axis.title.y = element_blank(),
+            panel.border = element_blank(),
+            axis.ticks = element_line(color = "black"),
+            axis.ticks.length = unit(0.2, "cm")
+          )
+        
+        gg_CCC_d13C_Age <- ggplot(CCC_d13C_clean[order(CCC_d13C_clean$age), ]) +
+          geom_point(aes(x = avg_d13C_VPDB, y = age), size = 1.5, color = "cornflowerblue") +
+          geom_path(aes(x = rollmean(avg_d13C_VPDB, 3, na.pad = TRUE), y = age), color = "black") +
+          scale_y_reverse(limits = common_y_limits) +
+          coord_cartesian(xlim = c(-32, -18)) +
+          labs(
+            x = Cdelt,
+            y = "Age (Ma)",
+            title = expression("Crooked Creek " * delta^13 * "C by Age")) + 
+          theme_minimal() +
+          theme(
+            panel.background = element_blank(),
+            plot.background = element_blank(),
+            panel.grid = element_blank(),
+            axis.line.y = element_blank(),
+            axis.title.y = element_blank(),
+            panel.border = element_blank(),
+            axis.ticks = element_line(color = "black"),
+            axis.ticks.length = unit(0.2, "cm")
+          )
+        
+        # Combine with patchwork
+
+        gg_Albian_by_age <- gg_CLC_Age_Albian + gg_CCC_d13C_Age +
+          plot_layout(ncol = 2, guides = "collect") &
+          theme(legend.position = "bottom")
+        
+        # Print combined plot
+        print(gg_Albian_by_age)      
+        
+        # Export the plot
+        ggsave(
+          filename = "d13C_combined_by_age.png",     # Output file name
+          plot = gg_d13C_combined_by_age,               # Plot object
+          path = here::here("results", "figures"),
+          width = 11,        
+          height = 8.5,       
+          dpi = 300
+        )   
+        
+        
+        
