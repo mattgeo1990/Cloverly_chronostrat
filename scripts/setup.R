@@ -47,11 +47,39 @@ invisible(lapply(required_packages, check_and_load))
 # Read in the Herrle et al. 2015 composite data 
   Herrle_composite_data <- read_csv(here("data", "raw", "HerrleEtAl2015_CompositeCIdata.csv"))
 
+# Read in Herrle 2015 arctic data
+  Herrle_arctic <- read.csv(here("data", "raw", "Herrle2015_arctic_data.csv"))
+
+# Read in Gottberg 2022 Cedar Mountain Fm d13Corg data
+ Gottberg_CMF_org <- read.csv(here("data", "raw", "Gottberg_org_CMF.csv"))
   
-  
-  
+# Read in Bralower 1999 data
+SantaRosa_org <- read.csv(here("data", "raw", "BralowerEtAl1999_SantaRosa_d13Corg.csv"))
+LaBoca_org <- read.csv(here("data", "raw", "BralowerEtAl1999_LaBoca_d13Corg.csv"))
+
+
 # prelim data wrangling --------------------
   
+# Prepare La Boca data: sort and compute 3-point average
+LaBoca_org_smooth <- LaBoca_org %>%
+  rename(
+    d13Corg_VPDB = bralower.La.Boca.Canyon.C_organic,
+    depth_m      = height.in.m
+  ) %>%
+  arrange(depth_m) %>%
+  mutate(d13C_roll3 = rollmean(d13Corg_VPDB, k = 3, fill = NA, align = "center"))
+
+
+# Prepare Santa Rosa data: sort and compute 3-point average
+SantaRosa_org_smooth <- SantaRosa_org %>%
+  rename(
+    d13Corg_VPDB = bralower.Santa.Rosa.Canyon.C_organic,
+    depth_m      = height.in.m
+  ) %>%
+  arrange(depth_m) %>%
+  mutate(d13C_roll3 = rollmean(d13Corg_VPDB, k = 3, fill = NA, align = "center"))
+
+
   # Prepare data: sort, convert factor, and compute 3-point average
   Herrle_composite_data <- Herrle_composite_data %>%
     arrange(Age_Ma_Gradstein) %>%
@@ -250,26 +278,97 @@ invisible(lapply(required_packages, check_and_load))
     # Add interpolated age to CCC dataset
     CCC_d13C_clean$age <- CCC_interp$y
     
+    
+    
+ # Create age model for Axel Heiberg Island
+    Albian_arctic_age <- data.frame(
+      age_Ma = character(),
+      height_m = character(),
+      stringsAsFactors = FALSE
+    )
+    
+    Albian_arctic_age <- data.frame(
+      age_Ma = c(106.58, 111.74),
+      height_m = c(750, 600)
+    )
+    # --- Inputs: two age–depth tie points (edit values as needed) -------------
+    age_depth_ties <- data.frame(
+      age_Ma   = c(106.58, 111.74),
+      depth_m  = c(750, 600)    # use a single, consistent name: depth_m
+    )
+    
+    # --- 0) Make sure Herrle_arctic has a depth_m column ----------------------
+    # If your dataframe uses 'height_m', rename it to 'depth_m' for consistency.
+    if ("height_m" %in% names(Herrle_arctic) && !"depth_m" %in% names(Herrle_arctic)) {
+      Herrle_arctic <- dplyr::rename(Herrle_arctic, depth_m = height_m)
+    }
+    
+    stopifnot("depth_m" %in% names(Herrle_arctic))
+    
+    # --- 1) Build linear age–depth model (no extrapolation) -------------------
+    age_depth_ties <- age_depth_ties[order(age_depth_ties$depth_m), ]
+    
+    # Interpolation function: age(depth)
+    age_fun <- approxfun(
+      x    = age_depth_ties$depth_m,
+      y    = age_depth_ties$age_Ma,
+      rule = 1   # NA outside tie-point range
+    )
+    
+    # --- 2) Interpolate ages into Herrle_arctic by depth ----------------------
+    Herrle_arctic <- Herrle_arctic %>%
+      dplyr::arrange(depth_m) %>%
+      dplyr::mutate(age_Ma_interp = age_fun(depth_m))
+    
+    # --- 3) Quick coverage check ---------------------------------------------
+    range_ties <- range(age_depth_ties$depth_m, na.rm = TRUE)
+    range_data <- range(Herrle_arctic$depth_m,    na.rm = TRUE)
+    message(sprintf(
+      "Tie-point depth range = [%.2f, %.2f] m; data depth range = [%.2f, %.2f] m",
+      range_ties[1], range_ties[2], range_data[1], range_data[2]
+    ))
+    
+    # --- 4) Sanity-check plot: age–depth line + tie points --------------------
+    if (requireNamespace("ggplot2", quietly = TRUE)) {
 
+      ggplot() +
+        geom_line(
+          data = Herrle_arctic,
+          aes(x = age_Ma_interp, y = depth_m),
+          linewidth = 0.7, alpha = 0.6, na.rm = TRUE
+        ) +
+        geom_point(
+          data = age_depth_ties,
+          aes(x = age_Ma, y = depth_m),
+          color = "red", size = 2
+        ) +
+        scale_y_reverse() +
+        labs(
+          x = "Age (Ma)",
+          y = "Depth (m)",
+          title = "Linear age–depth model and interpolated ages (Herrle Arctic)"
+        ) +
+        theme_minimal()
+    }
     
 ### Merge data into one dataframe ----------------------------------------------------
     
     # Prepare CCC data
     CCC_processed <- CCC_d13C_clean %>%
-      select(sample, Strat_m_above_Pryor, age, roll_mean_clean) %>%
+      select(sample, Strat_m_above_Pryor, age, avg_d13C_VPDB) %>%
       rename(
         depth = Strat_m_above_Pryor,
-        d13C  = roll_mean_clean
+        d13C  = avg_d13C_VPDB
       ) %>%
       mutate(section = "CCC", depth = depth - 10)  # Shift depth to base of LSM
     
     # Prepare CLC data
     CLC_processed <- CLC_d13C_clean %>%
-      select(Identifier.1, Depth, age, roll_mean_clean) %>%
+      select(Identifier.1, Depth, age, d.13C.12C) %>%
       rename(
         sample = Identifier.1,
         depth  = Depth,
-        d13C   = roll_mean_clean
+        d13C   = d.13C.12C
       ) %>%
       mutate(section = "CLC")
     
