@@ -1,8 +1,18 @@
+# ================================================================
+# midK_chemostrat_plots_CLEAN.R
+# Purpose: Reproduce mid-Cretaceous chemostratigraphy plots.
+# Notes:
+#   • This file keeps the plotting code unchanged to preserve figures.
+#   • Only readability and organization are improved (comments, spacing).
+#   • Assumes 'scripts/setup.R' loads packages and data as in your project.
+# Author: Matthew Allen and ChatGPT
+# Last updated: Aug 13 2025
+# ================================================================
 
-#### Setup ####
 
+# --- Setup ---
 # Check if data is loaded; if not, run setup
-if (!exists("CLC_d13C_clean") || !exists("CCC_d13C_clean") || 
+if (!exists("CLC_d13C_clean") || !exists("CCC_d13C_clean") ||
     !exists("combined_isotope_data")) {
   source(here::here("scripts", "setup.R"))
 }
@@ -11,8 +21,7 @@ if (!exists("CLC_d13C_clean") || !exists("CCC_d13C_clean") ||
 Cdelt <- expression("δ"^13 * "Corg (‰ vs. VPDB)")
 
 
-#### Plot: Full Composite (Herrle et al., 2015) ####
-
+# --- Plot: Full Composite (Herrle et al., 2015) ---
 HerrleComp <- ggplot(data, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
   geom_point(alpha = 0.5, size = 1.5, color = "blue") +
   geom_path(aes(x = rollmean(d13Corg_VPBD, 3, na.pad = TRUE))) +
@@ -53,40 +62,40 @@ ggsave(
 # Erba et al. (1999) ------------------------------------------------------
 
 # subset
-Erba99 <- subset(data, Source_C_data == "Erba_et_al._(1999)") 
+Erba99 <- subset(data, Source_C_data == "Erba_et_al._(1999)")
 
 # sort depth
-  # initialize age column
+# initialize age column
 
-  Erba99 <- Erba99[(order(Erba99$Age_Ma_Gradstein)), ]
+Erba99 <- Erba99[(order(Erba99$Age_Ma_Gradstein)), ]
 
 # create the ggplot object
-  ggErba99 <- ggplot(Erba99, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
-    geom_point(size = 1.5, color = "blue", alpha = 0.2) +
-    geom_path(aes(x = rollmean(d13Corg_VPBD, 3, na.pad = TRUE))) +
-    labs(
-      x = Cdelt,
-      y = "Age (Ma) Gradstein et al. 2012?",
-      title = "Erba et al. (1999)"
-    ) +
-    scale_y_reverse(
-      breaks = seq(
-        floor(88),
-        ceiling(max(data$Age_Ma_Gradstein, na.rm = TRUE)),
-        by = 0.5
-      )
-    ) +
-    theme_minimal() +
-    theme(
-      panel.grid = element_blank(),
-      axis.line.y = element_blank(),
-      axis.title.y = element_blank(),
-      panel.border = element_blank(),
-      axis.ticks = element_line(color = "black"),
-      axis.ticks.length = unit(0.2, "cm")
+ggErba99 <- ggplot(Erba99, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
+  geom_point(size = 1.5, color = "blue", alpha = 0.2) +
+  geom_path(aes(x = rollmean(d13Corg_VPBD, 3, na.pad = TRUE))) +
+  labs(
+    x = Cdelt,
+    y = "Age (Ma) Gradstein et al. 2012?",
+    title = "Erba et al. (1999)"
+  ) +
+  scale_y_reverse(
+    breaks = seq(
+      floor(88),
+      ceiling(max(data$Age_Ma_Gradstein, na.rm = TRUE)),
+      by = 0.5
     )
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks = element_line(color = "black"),
+    axis.ticks.length = unit(0.2, "cm")
+  )
 
-# print 
+# print
 ggErba99
 
 
@@ -103,7 +112,7 @@ ggsave(
 # Herrle et al. (2004) ----------------------------------------------------
 
 # subset by source
-Herrle04<- subset(data, Source_C_data == "Herrle_et_al._(2004)") 
+Herrle04<- subset(data, Source_C_data == "Herrle_et_al._(2004)")
 
 # sort depth
 Herrle04 <- Herrle04[(order(Herrle04$Age_Ma_Gradstein)), ]
@@ -111,7 +120,7 @@ Herrle04 <- Herrle04[(order(Herrle04$Age_Ma_Gradstein)), ]
 # create the ggplot object
 ggHerrle04 <- ggplot(Herrle04, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
   geom_point(size = 1.5, color = "blue", alpha = 0.2) +  # Blue points with black outlines +  # Customize with appropriate geom (e.g., geom_line, geom_smooth)
-  geom_path(aes(x=rollmean(d13Corg_VPBD, 3, na.pad=TRUE))) +   # Add a line 
+  geom_path(aes(x=rollmean(d13Corg_VPBD, 3, na.pad=TRUE))) +   # Add a line
   scale_y_reverse(
     breaks = seq(
       floor(88),
@@ -134,7 +143,7 @@ ggHerrle04 <- ggplot(Herrle04, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
     axis.ticks.length = unit(0.2, "cm")  # Set the length of x-axis ticks
   )
 
-# print 
+# print
 ggHerrle04
 
 # Export plot PNG
@@ -150,7 +159,7 @@ ggsave(
 # Gale_et_al._(2011) ------------------------------------------------------
 
 # subset by source
-Gale11<- subset(data, Source_C_data == "Gale_et_al._(2011)") 
+Gale11<- subset(data, Source_C_data == "Gale_et_al._(2011)")
 
 # sort depth
 Gale11 <- Gale11[(order(Gale11$Age_Ma_Gradstein)), ]
@@ -158,7 +167,7 @@ Gale11 <- Gale11[(order(Gale11$Age_Ma_Gradstein)), ]
 # create the ggplot object
 ggGale11 <- ggplot(Gale11, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
   geom_point(size = 1.5, color = "blue", alpha = 0.2) +  # Blue points with black outlines +  # Customize with appropriate geom (e.g., geom_line, geom_smooth)
-  geom_path(aes(x=rollmean(d13Corg_VPBD, 3, na.pad=TRUE))) +   # Add a line 
+  geom_path(aes(x=rollmean(d13Corg_VPBD, 3, na.pad=TRUE))) +   # Add a line
   labs(
     x = Cdelt,
     y = "Age (Ma; Gradstein et al. 2012?",
@@ -181,7 +190,7 @@ ggGale11 <- ggplot(Gale11, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
     axis.ticks.length = unit(0.2, "cm")  # Set the length of x-axis ticks
   )
 
-# print 
+# print
 ggGale11
 
 ggsave(
@@ -202,7 +211,7 @@ Gale11_109subset <- Gale11_109subset[(order(Gale11_109subset$Age_Ma_Gradstein)),
 # create the ggplot object
 ggGale11_109subset <- ggplot(Gale11_109subset, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
   geom_point(size = 1.5, color = "blue", alpha = 0.2) +  # Blue points with black outlines +  # Customize with appropriate geom (e.g., geom_line, geom_smooth)
-  geom_path(aes(x=rollmean(d13Corg_VPBD, 3, na.pad=TRUE))) +   # Add a line 
+  geom_path(aes(x=rollmean(d13Corg_VPBD, 3, na.pad=TRUE))) +   # Add a line
   labs(
     x = Cdelt,
     y = "Age (Ma; Gradstein et al. 2012?",
@@ -232,7 +241,7 @@ ggGale11_109subset <- ggplot(Gale11_109subset, aes(x = d13Corg_VPBD, y = Age_Ma_
     axis.ticks.length = unit(0.2, "cm")  # Set the length of x-axis ticks
   )
 
-# print 
+# print
 ggGale11_109subset
 
 ggsave(
@@ -247,7 +256,7 @@ ggsave(
 # Jarvis_et_al._(2006) ----------------------------------------------------
 
 # subset by source
-Jarvis06 <- subset(data, Source_C_data == "Jarvis_et_al._(2006)") 
+Jarvis06 <- subset(data, Source_C_data == "Jarvis_et_al._(2006)")
 
 # sort depth
 Jarvis06 <- Jarvis06[(order(Jarvis06$Age_Ma_Gradstein)), ]
@@ -255,7 +264,7 @@ Jarvis06 <- Jarvis06[(order(Jarvis06$Age_Ma_Gradstein)), ]
 # create the ggplot object
 ggJarvis06 <- ggplot(Jarvis06, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
   geom_point(size = 1.5, color = "blue", alpha = 0.2) +  # Blue points with black outlines +  # Customize with appropriate geom (e.g., geom_line, geom_smooth)
-  geom_path(aes(x=rollmean(d13Corg_VPBD, 3, na.pad=TRUE))) +   # Add a line 
+  geom_path(aes(x=rollmean(d13Corg_VPBD, 3, na.pad=TRUE))) +   # Add a line
   labs(
     x = Cdelt,
     y = "Age (Ma; Gradstein et al. 2012?",
@@ -271,7 +280,7 @@ ggJarvis06 <- ggplot(Jarvis06, aes(x = d13Corg_VPBD, y = Age_Ma_Gradstein)) +
     axis.ticks.length = unit(0.2, "cm")  # Set the length of x-axis ticks
   ) + scale_y_reverse()
 
-# print 
+# print
 ggJarvis06
 
 ggsave(
@@ -306,7 +315,7 @@ ggplot(data = Herrle_arctic_sorted, aes(x = d13Corg_VPDB, y = depth_m)) +
 Herrle_arctic_sorted <- Herrle_arctic %>%
   arrange(age_Ma_interp)
 
-ggplot(data = Herrle_arctic_sorted, aes(x = d13Corg_VPDB, y = age_Ma_interp)) +
+Arctic_by_age <- ggplot(data = Herrle_arctic_sorted, aes(x = d13Corg_VPDB, y = age_Ma_interp)) +
   geom_point(color = "grey40", alpha = 0.5, size = 2) +
   geom_path(color = "blue", linewidth = 0.5) +
   scale_y_reverse() +  # <-- reverse age axis so it decreases upward
@@ -320,6 +329,10 @@ ggplot(data = Herrle_arctic_sorted, aes(x = d13Corg_VPDB, y = age_Ma_interp)) +
     panel.grid.minor = element_blank(),
     plot.title = element_text(face = "bold", hjust = 0.5)
   )
+
+print(Arctic_by_age)
+
+
 
 ### Gottberg 2022 Cedar Mountain Formation d13C ---------------
 
